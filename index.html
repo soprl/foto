@@ -23,8 +23,24 @@
   <div class="app">
     <header class="header">
       <h1>Foto Kolaj</h1>
-      <p>Ekran ikiye bölünür · Ortada ters parçalar · 1080×1350 (Instagram)</p>
+      <p>Dikey veya yatay düzen · Ortada ters parçalar · 1080×1350</p>
     </header>
+
+    <div class="layout-picker">
+      <span class="layout-label">Düzen</span>
+      <button type="button" class="layout-btn active" data-layout="vertical" title="Sol / Sağ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/>
+        </svg>
+        Dikey
+      </button>
+      <button type="button" class="layout-btn" data-layout="horizontal" title="Üst / Alt">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="8" rx="1"/><rect x="3" y="13" width="18" height="8" rx="1"/>
+        </svg>
+        Yatay
+      </button>
+    </div>
 
     <div class="toolbar">
       <label class="upload-btn" id="uploadA">

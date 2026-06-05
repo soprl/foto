@@ -2,14 +2,17 @@ const W = 1080;
 const H = 1350;
 const CENTER_WIDTH_RATIO = 0.50;
 const CENTER_HEIGHT_RATIO = 0.34;
+const HORIZ_SQUARE_RATIO = 0.40;
+const HORIZ_GAP_RATIO = 0.055;
 
 const state = {
+  layout: "vertical",
   images: { a: null, b: null },
   transforms: {
-    left:      { scale: 1, panX: 0, panY: 0 },
-    right:     { scale: 1, panX: 0, panY: 0 },
-    swapLeft:  { scale: 1, panX: 0, panY: 0 },
-    swapRight: { scale: 1, panX: 0, panY: 0 },
+    mainA: { scale: 1, panX: 0, panY: 0 },
+    mainB: { scale: 1, panX: 0, panY: 0 },
+    swapA: { scale: 1, panX: 0, panY: 0 },
+    swapB: { scale: 1, panX: 0, panY: 0 },
   },
   active: null,
 };
@@ -34,6 +37,21 @@ let pinching = null;
 const isMobile =
   window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)").matches;
 
+const ZONE_LABELS = {
+  vertical: {
+    mainA: "Sol — Fotoğraf 1",
+    mainB: "Sağ — Fotoğraf 2",
+    swapB: "Orta sol — Fotoğraf 2",
+    swapA: "Orta sağ — Fotoğraf 1",
+  },
+  horizontal: {
+    mainA: "Üst — Fotoğraf 1",
+    mainB: "Alt — Fotoğraf 2",
+    swapB: "Orta üst — Fotoğraf 2",
+    swapA: "Orta alt — Fotoğraf 1",
+  },
+};
+
 function touchDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -47,19 +65,45 @@ function touchMid(touches) {
   };
 }
 
-function layout() {
+function layoutVertical() {
   const halfW = W / 2;
-
   const pieceW = (W * CENTER_WIDTH_RATIO) / 2;
   const boxH = H * CENTER_HEIGHT_RATIO;
   const boxY = (H - boxH) / 2;
 
   return {
-    leftCol:   { x: 0,     y: 0, w: halfW, h: H },
-    rightCol:  { x: halfW, y: 0, w: halfW, h: H },
-    swapLeft:  { x: halfW - pieceW, y: boxY, w: pieceW, h: boxH },
-    swapRight: { x: halfW,         y: boxY, w: pieceW, h: boxH },
+    mainAClip:  { x: 0,     y: 0, w: halfW, h: H },
+    mainAFrame: { x: 0,     y: 0, w: halfW, h: H },
+    mainBClip:  { x: halfW, y: 0, w: halfW, h: H },
+    mainBFrame: { x: halfW, y: 0, w: halfW, h: H },
+    swapBClip:  { x: halfW - pieceW, y: boxY, w: pieceW, h: boxH },
+    swapBFrame: { x: halfW - pieceW, y: boxY, w: pieceW, h: boxH },
+    swapAClip:  { x: halfW,         y: boxY, w: pieceW, h: boxH },
+    swapAFrame: { x: halfW,         y: boxY, w: pieceW, h: boxH },
   };
+}
+
+function layoutHorizontal() {
+  const halfH = H / 2;
+  const sq = W * HORIZ_SQUARE_RATIO;
+  const gap = H * HORIZ_GAP_RATIO;
+  const cx = (W - sq) / 2;
+  const midY = H / 2;
+
+  return {
+    mainAClip:  { x: 0, y: 0,     w: W, h: halfH },
+    mainAFrame: { x: 0, y: 0,     w: W, h: H },
+    mainBClip:  { x: 0, y: halfH, w: W, h: halfH },
+    mainBFrame: { x: 0, y: 0,     w: W, h: H },
+    swapBClip:  { x: cx, y: midY - gap / 2 - sq, w: sq, h: sq },
+    swapBFrame: { x: cx, y: midY - gap / 2 - sq, w: sq, h: sq },
+    swapAClip:  { x: cx, y: midY + gap / 2,       w: sq, h: sq },
+    swapAFrame: { x: cx, y: midY + gap / 2,       w: sq, h: sq },
+  };
+}
+
+function layout() {
+  return state.layout === "horizontal" ? layoutHorizontal() : layoutVertical();
 }
 
 function drawInRect(ctx, image, clip, frame, t, sx, sy, blackBg = false) {
@@ -93,14 +137,19 @@ function drawInRect(ctx, image, clip, frame, t, sx, sy, blackBg = false) {
   ctx.restore();
 }
 
-function fillCenterBlack(ctx, lay, sx, sy) {
+function fillSwapBlack(ctx, lay, sx, sy) {
   ctx.fillStyle = "#000";
-  ctx.fillRect(
-    lay.swapLeft.x * sx,
-    lay.swapLeft.y * sy,
-    (lay.swapLeft.w + lay.swapRight.w) * sx,
-    lay.swapLeft.h * sy
-  );
+  if (state.layout === "vertical") {
+    ctx.fillRect(
+      lay.swapBClip.x * sx,
+      lay.swapBClip.y * sy,
+      (lay.swapBClip.w + lay.swapAClip.w) * sx,
+      lay.swapBClip.h * sy
+    );
+  } else {
+    ctx.fillRect(lay.swapBClip.x * sx, lay.swapBClip.y * sy, lay.swapBClip.w * sx, lay.swapBClip.h * sy);
+    ctx.fillRect(lay.swapAClip.x * sx, lay.swapAClip.y * sy, lay.swapAClip.w * sx, lay.swapAClip.h * sy);
+  }
 }
 
 function render(ctx, pw, ph) {
@@ -113,12 +162,12 @@ function render(ctx, pw, ph) {
   const sy = ph / H;
   const { images, transforms: t } = state;
 
-  if (images.a) drawInRect(ctx, images.a, lay.leftCol,  lay.leftCol,  t.left,  sx, sy);
-  if (images.b) drawInRect(ctx, images.b, lay.rightCol, lay.rightCol, t.right, sx, sy);
+  if (images.a) drawInRect(ctx, images.a, lay.mainAClip, lay.mainAFrame, t.mainA, sx, sy);
+  if (images.b) drawInRect(ctx, images.b, lay.mainBClip, lay.mainBFrame, t.mainB, sx, sy);
 
-  fillCenterBlack(ctx, lay, sx, sy);
-  if (images.b) drawInRect(ctx, images.b, lay.swapLeft,  lay.swapLeft,  t.swapLeft,  sx, sy, true);
-  if (images.a) drawInRect(ctx, images.a, lay.swapRight, lay.swapRight, t.swapRight, sx, sy, true);
+  fillSwapBlack(ctx, lay, sx, sy);
+  if (images.b) drawInRect(ctx, images.b, lay.swapBClip, lay.swapBFrame, t.swapB, sx, sy, true);
+  if (images.a) drawInRect(ctx, images.a, lay.swapAClip, lay.swapAFrame, t.swapA, sx, sy, true);
 }
 
 function drawPreview() {
@@ -131,25 +180,21 @@ function drawPreview() {
   render(pCtx, box.width, box.height);
 }
 
+function defaultHint() {
+  if (isMobile) return "Sürükleyerek hizala · İki parmakla büyüt/küçült";
+  return state.layout === "horizontal"
+    ? "Fotoğraf 1 üstte · Fotoğraf 2 altta · Tıklayıp sürükleyin"
+    : "Fotoğraf 1 solda · Fotoğraf 2 sağda · Tıklayıp sürükleyin";
+}
+
 function refresh() {
   const ready = state.images.a && state.images.b;
   placeholder.classList.toggle("hidden", ready);
   downloadBtn.disabled = !ready;
-  if (ready && !state.active) {
-    adjustHint.textContent = isMobile
-      ? "Sürükleyerek hizala · İki parmakla büyüt/küçült"
-      : "Fotoğraf 1 solda · Fotoğraf 2 sağda · Tıklayıp sürükleyerek hizalayın";
-  }
+  if (ready && !state.active) adjustHint.textContent = defaultHint();
   adjustHint.hidden = !ready;
   if (ready) requestAnimationFrame(() => requestAnimationFrame(drawPreview));
 }
-
-const ZONE_LABELS = {
-  left: "Sol — Fotoğraf 1",
-  right: "Sağ — Fotoğraf 2",
-  swapLeft: "Orta sol — Fotoğraf 2",
-  swapRight: "Orta sağ — Fotoğraf 1",
-};
 
 function pickZone(cx, cy) {
   const box = previewBox.getBoundingClientRect();
@@ -157,23 +202,27 @@ function pickZone(cx, cy) {
   const y = ((cy - box.top) / box.height) * H;
   const lay = layout();
 
-  const sl = lay.swapLeft;
-  const sr = lay.swapRight;
-  if (x >= sl.x && x < sl.x + sl.w && y >= sl.y && y < sl.y + sl.h) return "swapLeft";
-  if (x >= sr.x && x < sr.x + sr.w && y >= sr.y && y < sr.y + sr.h) return "swapRight";
-  if (x < W / 2) return "left";
-  return "right";
+  const sb = lay.swapBClip;
+  const sa = lay.swapAClip;
+  if (x >= sb.x && x < sb.x + sb.w && y >= sb.y && y < sb.y + sb.h) return "swapB";
+  if (x >= sa.x && x < sa.x + sa.w && y >= sa.y && y < sa.y + sa.h) return "swapA";
+
+  if (state.layout === "horizontal") {
+    return y < H / 2 ? "mainA" : "mainB";
+  }
+  return x < W / 2 ? "mainA" : "mainB";
 }
 
 function syncScaleUI(id) {
   const t = state.transforms[id];
+  const label = ZONE_LABELS[state.layout][id];
   if (isMobile) {
-    adjustHint.textContent = `${ZONE_LABELS[id]} · ${t.scale.toFixed(1)}× — Sürükle · İki parmakla büyüt/küçült`;
+    adjustHint.textContent = `${label} · ${t.scale.toFixed(1)}× — Sürükle · İki parmakla büyüt/küçült`;
     adjustHint.hidden = false;
   } else {
     zoomSlider.value = t.scale;
     zoomValue.textContent = `${t.scale.toFixed(1)}×`;
-    activeLabel.textContent = ZONE_LABELS[id];
+    activeLabel.textContent = label;
     zoomBar.hidden = false;
   }
 }
@@ -210,6 +259,21 @@ document.querySelectorAll('input[type="file"]').forEach((inp) => {
     const f = e.target.files[0];
     if (f) loadFile(f, inp.dataset.slot);
     e.target.value = "";
+  });
+});
+
+document.querySelectorAll(".layout-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    state.layout = btn.dataset.layout;
+    state.active = null;
+    zoomBar.hidden = true;
+    document.querySelectorAll(".layout-btn").forEach((b) => {
+      b.classList.toggle("active", b.dataset.layout === state.layout);
+    });
+    if (state.images.a && state.images.b) {
+      adjustHint.textContent = defaultHint();
+      drawPreview();
+    }
   });
 });
 

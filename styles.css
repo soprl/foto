@@ -48,6 +48,45 @@ body {
   margin-top: 0.35rem;
 }
 
+.layout-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.layout-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+.layout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.layout-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+.layout-btn.active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(91,127,255,0.12);
+}
+
 .toolbar {
   display: flex;
   align-items: center;
