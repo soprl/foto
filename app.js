@@ -29,6 +29,23 @@ const zoomValue = document.getElementById("zoomValue");
 const resetBtn = document.getElementById("resetBtn");
 
 let dragging = null;
+let pinching = null;
+
+const isMobile =
+  window.matchMedia("(max-width: 768px), (hover: none) and (pointer: coarse)").matches;
+
+function touchDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+function touchMid(touches) {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2,
+  };
+}
 
 function layout() {
   const halfW = W / 2;
@@ -118,6 +135,11 @@ function refresh() {
   const ready = state.images.a && state.images.b;
   placeholder.classList.toggle("hidden", ready);
   downloadBtn.disabled = !ready;
+  if (ready && !state.active) {
+    adjustHint.textContent = isMobile
+      ? "Sürükleyerek hizala · İki parmakla büyüt/küçült"
+      : "Fotoğraf 1 solda · Fotoğraf 2 sağda · Tıklayıp sürükleyerek hizalayın";
+  }
   adjustHint.hidden = !ready;
   if (ready) requestAnimationFrame(() => requestAnimationFrame(drawPreview));
 }
@@ -143,13 +165,22 @@ function pickZone(cx, cy) {
   return "right";
 }
 
+function syncScaleUI(id) {
+  const t = state.transforms[id];
+  if (isMobile) {
+    adjustHint.textContent = `${ZONE_LABELS[id]} · ${t.scale.toFixed(1)}× — Sürükle · İki parmakla büyüt/küçült`;
+    adjustHint.hidden = false;
+  } else {
+    zoomSlider.value = t.scale;
+    zoomValue.textContent = `${t.scale.toFixed(1)}×`;
+    activeLabel.textContent = ZONE_LABELS[id];
+    zoomBar.hidden = false;
+  }
+}
+
 function selectZone(id) {
   state.active = id;
-  const t = state.transforms[id];
-  zoomSlider.value = t.scale;
-  zoomValue.textContent = `${t.scale.toFixed(1)}×`;
-  activeLabel.textContent = ZONE_LABELS[id];
-  zoomBar.hidden = false;
+  syncScaleUI(id);
 }
 
 function loadFile(file, slot) {
@@ -182,46 +213,118 @@ document.querySelectorAll('input[type="file"]').forEach((inp) => {
   });
 });
 
-previewCanvas.addEventListener("mousedown", (e) => {
+function startDrag(clientX, clientY) {
   if (!state.images.a || !state.images.b) return;
-  const id = pickZone(e.clientX, e.clientY);
+  const id = pickZone(clientX, clientY);
   selectZone(id);
   const t = state.transforms[id];
-  dragging = { id, x: e.clientX, y: e.clientY, panX: t.panX, panY: t.panY };
+  dragging = { id, x: clientX, y: clientY, panX: t.panX, panY: t.panY };
   previewCanvas.classList.add("dragging");
-  e.preventDefault();
-});
+}
 
-window.addEventListener("mousemove", (e) => {
+function moveDrag(clientX, clientY) {
   if (!dragging) return;
   const box = previewBox.getBoundingClientRect();
   const t = state.transforms[dragging.id];
-  t.panX = dragging.panX + ((e.clientX - dragging.x) / box.width) * W;
-  t.panY = dragging.panY + ((e.clientY - dragging.y) / box.height) * H;
+  t.panX = dragging.panX + ((clientX - dragging.x) / box.width) * W;
+  t.panY = dragging.panY + ((clientY - dragging.y) / box.height) * H;
   drawPreview();
-});
+}
 
-window.addEventListener("mouseup", () => {
+function endDrag() {
   dragging = null;
   previewCanvas.classList.remove("dragging");
+}
+
+previewCanvas.addEventListener("mousedown", (e) => {
+  startDrag(e.clientX, e.clientY);
+  e.preventDefault();
 });
 
-previewCanvas.addEventListener("wheel", (e) => {
-  if (!state.active) return;
-  e.preventDefault();
-  const t = state.transforms[state.active];
-  t.scale = Math.min(3, Math.max(1, t.scale + (e.deltaY > 0 ? -0.05 : 0.05)));
-  zoomSlider.value = t.scale;
-  zoomValue.textContent = `${t.scale.toFixed(1)}×`;
-  drawPreview();
+window.addEventListener("mousemove", (e) => moveDrag(e.clientX, e.clientY));
+window.addEventListener("mouseup", endDrag);
+
+previewCanvas.addEventListener("touchstart", (e) => {
+  if (!state.images.a || !state.images.b) return;
+
+  if (e.touches.length === 2) {
+    endDrag();
+    const mid = touchMid(e.touches);
+    const id = pickZone(mid.x, mid.y);
+    selectZone(id);
+    pinching = {
+      id,
+      startDist: touchDist(e.touches),
+      startScale: state.transforms[id].scale,
+    };
+    e.preventDefault();
+  } else if (e.touches.length === 1) {
+    pinching = null;
+    startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    e.preventDefault();
+  }
 }, { passive: false });
 
-zoomSlider.addEventListener("input", () => {
-  if (!state.active) return;
-  state.transforms[state.active].scale = parseFloat(zoomSlider.value);
-  zoomValue.textContent = `${state.transforms[state.active].scale.toFixed(1)}×`;
-  drawPreview();
+previewCanvas.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 2 && pinching) {
+    const ratio = touchDist(e.touches) / pinching.startDist;
+    const t = state.transforms[pinching.id];
+    t.scale = Math.min(3, Math.max(1, pinching.startScale * ratio));
+    syncScaleUI(pinching.id);
+    drawPreview();
+    e.preventDefault();
+  } else if (e.touches.length === 1 && dragging) {
+    moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    e.preventDefault();
+  }
+}, { passive: false });
+
+previewCanvas.addEventListener("touchend", (e) => {
+  if (e.touches.length === 0) {
+    pinching = null;
+    endDrag();
+  } else if (e.touches.length === 1) {
+    pinching = null;
+    const touch = e.touches[0];
+    if (state.active) {
+      const t = state.transforms[state.active];
+      dragging = {
+        id: state.active,
+        x: touch.clientX,
+        y: touch.clientY,
+        panX: t.panX,
+        panY: t.panY,
+      };
+    }
+  }
 });
+
+if (!isMobile) {
+  previewCanvas.addEventListener("wheel", (e) => {
+    if (!state.active) return;
+    e.preventDefault();
+    const t = state.transforms[state.active];
+    t.scale = Math.min(3, Math.max(1, t.scale + (e.deltaY > 0 ? -0.05 : 0.05)));
+    zoomSlider.value = t.scale;
+    zoomValue.textContent = `${t.scale.toFixed(1)}×`;
+    drawPreview();
+  }, { passive: false });
+
+  zoomSlider.addEventListener("input", () => {
+    if (!state.active) return;
+    state.transforms[state.active].scale = parseFloat(zoomSlider.value);
+    zoomValue.textContent = `${state.transforms[state.active].scale.toFixed(1)}×`;
+    drawPreview();
+  });
+}
+
+document.addEventListener("gesturestart", (e) => {
+  if (!previewCanvas.contains(e.target)) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener("gesturechange", (e) => {
+  if (!previewCanvas.contains(e.target)) e.preventDefault();
+}, { passive: false });
 
 resetBtn.addEventListener("click", () => {
   if (!state.active) return;

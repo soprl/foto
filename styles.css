@@ -11,11 +11,18 @@
   --accent: #5b7fff;
 }
 
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: "DM Sans", system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 .app {
@@ -141,6 +148,7 @@ body {
   height: 100%;
   z-index: 2;
   cursor: grab;
+  touch-action: none;
 }
 
 #previewCanvas.dragging { cursor: grabbing; }
@@ -236,6 +244,12 @@ body {
 }
 
 .reset-btn:hover { color: var(--text); }
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .zoom-bar { display: none !important; }
+
+  .hint { font-size: 0.78rem; }
+}
 
 .popup-overlay {
   position: fixed;
