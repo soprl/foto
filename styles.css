@@ -1,0 +1,329 @@
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #111318;
+  --surface: #1a1d26;
+  --border: rgba(255,255,255,0.1);
+  --text: #f0f1f5;
+  --muted: #8d93a3;
+  --accent: #5b7fff;
+}
+
+body {
+  font-family: "DM Sans", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.header p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 0.35rem;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.toolbar-spacer { flex: 1; }
+
+.upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1rem;
+  background: var(--surface);
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-width: 150px;
+}
+
+.upload-btn:hover { border-color: var(--accent); }
+
+.upload-btn.filled {
+  border-style: solid;
+  border-color: rgba(91,127,255,0.4);
+}
+
+.upload-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.upload-text {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.upload-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.upload-btn.filled .upload-icon { display: none; }
+
+.download-btn {
+  padding: 0.65rem 1.4rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.download-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.download-btn:not(:disabled):hover {
+  filter: brightness(1.1);
+}
+
+.preview-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.preview-box {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  aspect-ratio: 1080 / 1350;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+#previewCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  cursor: grab;
+}
+
+#previewCanvas.dragging { cursor: grabbing; }
+
+.preview-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: var(--surface);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.preview-placeholder.hidden { display: none; }
+
+.preview-placeholder p {
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.preview-placeholder span { font-size: 0.85rem; }
+
+.hint {
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.zoom-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.zone-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 130px;
+}
+
+.zoom-bar label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.zoom-bar input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+}
+
+.zoom-bar input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.zoom-bar span {
+  font-size: 0.8rem;
+  color: var(--muted);
+  min-width: 40px;
+}
+
+.reset-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.reset-btn:hover { color: var(--text); }
+
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  transition: opacity 0.5s ease;
+}
+
+.popup-overlay.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.popup-overlay.gone { display: none; }
+
+.popup-card {
+  text-align: center;
+  padding: 2.5rem 2.8rem;
+  background: linear-gradient(145deg, #1e2230, #14161f);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  max-width: 380px;
+  animation: popupIn 0.5s ease;
+}
+
+@keyframes popupIn {
+  from { opacity: 0; transform: scale(0.9) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.popup-heart {
+  font-size: 2.2rem;
+  color: #ff6b9d;
+  margin-bottom: 1rem;
+  animation: pulse 1.2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.15); }
+}
+
+.popup-text {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.8rem;
+  background: linear-gradient(135deg, #fff 30%, #c4b5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.popup-btn {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #ff6b9d, #c084fc);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 24px rgba(255, 107, 157, 0.35);
+}
+
+.popup-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(255, 107, 157, 0.45);
+}
+
+.popup-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  transform: none;
+}
+
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  pointer-events: none;
+}

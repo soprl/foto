@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foto Kolaj</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup-card">
+      <div class="popup-heart">♥</div>
+      <p class="popup-text">BEZYA Hanım'a<br>özel yapılmıştır.</p>
+      <button type="button" class="popup-btn" id="popupBtn">TEŞEKKÜRLER &lt;3</button>
+    </div>
+  </div>
+
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+  <div class="app">
+    <header class="header">
+      <h1>Foto Kolaj</h1>
+      <p>Ekran ikiye bölünür · Ortada ters parçalar · 1080×1350 (Instagram)</p>
+    </header>
+
+    <div class="toolbar">
+      <label class="upload-btn" id="uploadA">
+        <input type="file" accept="image/*" hidden data-slot="a" />
+        <span class="upload-icon">+</span>
+        <span class="upload-text">Fotoğraf 1</span>
+        <img class="upload-thumb" alt="" hidden />
+      </label>
+      <label class="upload-btn" id="uploadB">
+        <input type="file" accept="image/*" hidden data-slot="b" />
+        <span class="upload-icon">+</span>
+        <span class="upload-text">Fotoğraf 2</span>
+        <img class="upload-thumb" alt="" hidden />
+      </label>
+      <div class="toolbar-spacer"></div>
+      <button type="button" id="downloadBtn" class="download-btn" disabled>İndir (PNG)</button>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="preview-box" id="previewBox">
+        <canvas id="previewCanvas"></canvas>
+        <div class="preview-placeholder" id="previewPlaceholder">
+          <p>Önizleme burada görünecek</p>
+          <span>İki fotoğrafı yükleyin</span>
+        </div>
+      </div>
+      <p class="hint" id="adjustHint" hidden>
+        Fotoğraf 1 solda · Fotoğraf 2 sağda · Ortadaki küçük parçalar ters · Tıklayıp sürükleyin
+      </p>
+      <div class="zoom-bar" id="zoomBar" hidden>
+        <span class="zone-label" id="activeLabel">Sol fotoğraf</span>
+        <label>Yakınlaştır</label>
+        <input type="range" id="zoomSlider" min="1" max="3" step="0.01" value="1" />
+        <span id="zoomValue">1.0×</span>
+        <button type="button" id="resetBtn" class="reset-btn">Sıfırla</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="exportCanvas" hidden></canvas>
+  <script src="popup.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
