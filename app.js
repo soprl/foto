@@ -1,6 +1,7 @@
 const W = 1080;
 const H = 1350;
-const CENTER_RATIO = 0.38;
+const CENTER_WIDTH_RATIO = 0.50;
+const CENTER_HEIGHT_RATIO = 0.34;
 
 const state = {
   images: { a: null, b: null },
@@ -32,17 +33,15 @@ let dragging = null;
 function layout() {
   const halfW = W / 2;
 
-  const boxW = W * CENTER_RATIO;
-  const boxH = H * CENTER_RATIO;
-  const boxX = (W - boxW) / 2;
+  const pieceW = (W * CENTER_WIDTH_RATIO) / 2;
+  const boxH = H * CENTER_HEIGHT_RATIO;
   const boxY = (H - boxH) / 2;
-  const pieceW = boxW / 2;
 
   return {
     leftCol:   { x: 0,     y: 0, w: halfW, h: H },
     rightCol:  { x: halfW, y: 0, w: halfW, h: H },
-    swapLeft:  { x: boxX,          y: boxY, w: pieceW, h: boxH },
-    swapRight: { x: boxX + pieceW, y: boxY, w: pieceW, h: boxH },
+    swapLeft:  { x: halfW - pieceW, y: boxY, w: pieceW, h: boxH },
+    swapRight: { x: halfW,         y: boxY, w: pieceW, h: boxH },
   };
 }
 
