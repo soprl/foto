@@ -97,6 +97,36 @@ body {
 
 .toolbar-spacer { flex: 1; }
 
+.filename-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filename-wrap label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.filename-wrap input {
+  width: 140px;
+  padding: 0.55rem 0.75rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.filename-wrap input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.filename-wrap input::placeholder { color: var(--muted); }
+
 .upload-btn {
   display: flex;
   align-items: center;

@@ -30,6 +30,7 @@ const zoomBar = document.getElementById("zoomBar");
 const zoomSlider = document.getElementById("zoomSlider");
 const zoomValue = document.getElementById("zoomValue");
 const resetBtn = document.getElementById("resetBtn");
+const filenameInput = document.getElementById("filenameInput");
 
 let dragging = null;
 let pinching = null;
@@ -397,6 +398,15 @@ resetBtn.addEventListener("click", () => {
   drawPreview();
 });
 
+function getDownloadName() {
+  const raw = filenameInput.value.trim() || "bezia-kolaj";
+  const safe = raw
+    .replace(/[/\\?%*:|"<>#]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/\.+$/g, "");
+  return `${safe || "bezia-kolaj"}-1080x1350.png`;
+}
+
 downloadBtn.addEventListener("click", () => {
   exportCanvas.width = W;
   exportCanvas.height = H;
@@ -404,7 +414,7 @@ downloadBtn.addEventListener("click", () => {
   exportCanvas.toBlob((blob) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `kolaj-1080x1350-${Date.now()}.png`;
+    a.download = getDownloadName();
     a.click();
     URL.revokeObjectURL(a.href);
   }, "image/png");
